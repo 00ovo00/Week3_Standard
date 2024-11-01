@@ -91,6 +91,16 @@ public class PlayerController : MonoBehaviour
 
         transform.eulerAngles += new Vector3(0, mouseDelta.x * lookSensitivity, 0);
     }
+
+    public void OnInventoryButton(InputAction.CallbackContext callbackContext)
+    {
+        // 탭 키 눌렸으면
+        if (callbackContext.phase == InputActionPhase.Started)
+        {
+            inventory?.Invoke();
+            ToggleCursor();
+        }
+    }
     
     public void OnSetting(InputAction.CallbackContext callbackContext)
     {
@@ -101,7 +111,7 @@ public class PlayerController : MonoBehaviour
             ToggleCursor();
         }
     }
-
+    
     public void ToggleCursor()
     {
         // 커서 상태 확인
