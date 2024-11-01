@@ -1,8 +1,11 @@
 # Week3_Standard
 
-### Q1. 숙련 1강 ~ 숙련 3강
-
-**분석 문제** : 분석한 내용을 직접 작성하고, 강의의 코드를 다시 한번 작성하며 복습해봅시다.
+<details>
+    <summary><b> Q1. 숙련 1강 ~ 숙련 3강</b></summary>
+    <div markdown="1">
+    <ul>
+        
+**분석 문제** 분석한 내용을 직접 작성하고, 강의의 코드를 다시 한번 작성하며 복습해봅시다.
 
 - 입문 주차와 비교해서 입력 받는 방식의 차이와 공통점을 비교해보세요.
     
@@ -95,10 +98,16 @@ bool IsGrounded()
     FixedUpdate는 Time.deltaTime과 무관하게 일정 시간 간격으로 호출되어 물리 기반 로직 실행에 적합, Move는 Rigidbody 이용해 실제 물리 연산이 일어나므로 FixedUpdate에서 실행하여 프레임 속도와 관계 없이 일관된 플레이어 움직임 구현 가능하게 함
     
     LateUpdate는 모든 Update 실행이 완료되고 호출, 플레이어가 프레임 당 이동한 만큼의 최신 위치와 시점을 카메라에 반영해야하므로 LateUpdate에서 호출하게 함
+    </ul>
+  </div>
+</details>
 
-### Q2. 숙련 4강 ~ 숙련 6강
+<details>
+    <summary><b> Q2. 숙련 4강 ~ 숙련 6강 </b></summary>
+    <div markdown="1">
+    <ul>
 
-**분석 문제** : 분석한 내용을 직접 작성하고, 강의의 코드를 다시 한번 작성하며 복습해봅시다.
+**분석 문제** 분석한 내용을 직접 작성하고, 강의의 코드를 다시 한번 작성하며 복습해봅시다.
 
 - 별도의 UI 스크립트를 만드는 이유에 대해 객체지향적 관점에서 생각해보세요.
     
@@ -290,8 +299,278 @@ bool IsGrounded()
             image.enabled = false;
         }
     }
-    ```
-
-    
-    
+    ```    
     </aside>
+    </ul>
+  </div>
+</details>
+
+<details>
+    <summary><b> Q3. 숙련 9강 ~ 숙련 11강</b></summary>
+    <div markdown="1">
+    <ul>
+
+**분석 문제** : 분석한 내용을 직접 작성하고, 강의의 코드를 다시 한번 작성하며 복습해봅시다.
+
+- `Interaction` 기능의 구조와 핵심 로직을 분석해보세요.
+    
+    ```csharp
+    /* Interaction.cs */
+    // 플레이어가 Interactable한 오브젝트와 상호작용하도록 하는 역할
+    // Raycast를 이용해 특정 오브젝트 감지하고 정보를 받아와 UI에 표시하고 이벤트 발생시킴
+    using TMPro;
+    using UnityEngine;
+    using UnityEngine.InputSystem;
+    
+    public interface IInteractable
+    {
+        public string GetInteractPrompt();
+        public void OnInteract();
+    }
+    
+    public class Interaction : MonoBehaviour
+    {
+        public float checkRate = 0.05f; // 상호작용 중인지 체크하는 빈도
+        private float lastCheckTime;
+        public float maxCheckDistance;
+        public LayerMask layerMask;
+    
+        public GameObject curInteractGameObject;
+        private IInteractable curInteractable;
+    
+        public TextMeshProUGUI promptText;
+        private Camera camera;
+    
+        void Start()
+        {
+            camera = Camera.main;
+        }
+    
+        void Update()
+        {
+            if(Time.time - lastCheckTime > checkRate)
+            {
+                lastCheckTime = Time.time;
+                
+                // 스크린 기준 정중앙에서 ray 발사
+                Ray ray = camera.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2));
+                RaycastHit hit;
+    
+                // maxCheckDistance 내에 layerMask와 일치하여 raycast된 hit 정보 가져오기
+                if(Physics.Raycast(ray, out hit, maxCheckDistance, layerMask))
+                {
+                    // 현재 상호작용 중인 객체가 아니면(새로운 객체를 상호작용하는 경우)
+                    if(hit.collider.gameObject != curInteractGameObject)
+                    {
+                        // 현재 상호작용 중인 객체 정보 갱신하고 프롬프트 텍스트 설정
+                        curInteractGameObject = hit.collider.gameObject;
+                        curInteractable = hit.collider.GetComponent<IInteractable>();
+                        SetPromptText();
+                    }
+                }
+                // raycast된 객체가 없으면
+                else
+                {
+                    // 현재 상호작용 중인 객체 null로 만들고 프롬프트의 텍스트 비활성화
+                    curInteractGameObject = null;
+                    curInteractable = null;
+                    promptText.gameObject.SetActive(false);
+                }
+            }
+        }
+    
+        private void SetPromptText()
+        {
+            // 상호작용 텍스트 설정하고 활성화
+            promptText.gameObject.SetActive(true);
+            promptText.text = curInteractable.GetInteractPrompt();
+        }
+    
+        public void OnInteractInput(InputAction.CallbackContext context)
+        {
+            // E키가 눌렸고 상호작용 가능한 객체가 있을 때
+            if(context.phase == InputActionPhase.Started && curInteractable != null)
+            {
+                // 상호작용하는 함수 호출(상호작용 실행) 후
+                curInteractable.OnInteract();
+                // 상호작용 중인 객체가 없는 상태로 reset
+                curInteractGameObject = null;
+                curInteractable = null;
+                promptText.gameObject.SetActive(false);
+            }
+        }
+    }
+    ```
+    
+- `Inventory` 기능의 구조와 핵심 로직을 분석해보세요.
+    
+    ```csharp
+    /* UIInventory.cs */
+    // 획득한 아이템 저장하고 UI를 통해 화면에 출력하는 역할
+    using TMPro;
+    using UnityEngine;
+    using UnityEngine.Events;
+    using UnityEngine.InputSystem;
+    
+    public class UIInventory : MonoBehaviour
+    {
+        public ItemSlot[] slots;
+    
+        public GameObject inventoryWindow;
+        public Transform slotPanel;
+        public Transform dropPosition;
+    
+        [Header("Selected Item")]
+        private ItemSlot selectedItem;
+        private int selectedItemIndex;
+        public TextMeshProUGUI selectedItemName;
+        public TextMeshProUGUI selectedItemDescription;
+        public TextMeshProUGUI selectedItemStatName;
+        public TextMeshProUGUI selectedItemStatValue;
+        public GameObject useButton;
+        public GameObject equipButton;
+        public GameObject unEquipButton;
+        public GameObject dropButton;
+    
+        private int curEquipIndex;
+    
+        private PlayerController controller;
+        private PlayerCondition condition;
+    
+        void Start()
+        {
+            controller = CharacterManager.Instance.Player.controller;
+            condition = CharacterManager.Instance.Player.condition;
+            dropPosition = CharacterManager.Instance.Player.dropPosition;
+    
+            controller.inventory += Toggle;
+            CharacterManager.Instance.Player.addItem += AddItem;
+    
+            inventoryWindow.SetActive(false);
+            slots = new ItemSlot[slotPanel.childCount];
+    
+            for(int i = 0; i < slots.Length; i++)
+            {
+                slots[i] = slotPanel.GetChild(i).GetComponent<ItemSlot>();
+                slots[i].index = i;
+                slots[i].inventory = this;
+                slots[i].Clear();
+            }
+    
+            ClearSelectedItemWindow();  // 초기 세팅
+        }
+    
+        public void AddItem()
+        {
+            // 현재 상호작용 중인 아이템 정보 가져오기
+            ItemData data = CharacterManager.Instance.Player.itemData;
+            // 중복 가능한 아이템이면
+            if (data.canStack)
+            {
+                // 아이템 정보 가져오기
+                ItemSlot slot = GetItemStack(data);
+                // 최대 개수보다 적으면
+                if(slot != null)
+                {
+                    // 수량만 더해주고 UI 갱신
+                    slot.quantity++;
+                    UpdateUI();
+                    // 현재 상호작용 중인 아이템 없는 상태로 만듦
+                    CharacterManager.Instance.Player.itemData = null;
+                    return;
+                }
+            }
+            // 아이템 슬롯이 비어있으면 빈 슬롯 세팅
+            ItemSlot emptySlot = GetEmptySlot();
+            // 슬롯에 아이템이 있으면
+            if(emptySlot != null)
+            {
+                // 아이템 데이터와 수량을 UI에 갱신
+                emptySlot.item = data;
+                emptySlot.quantity = 1;
+                UpdateUI();
+                CharacterManager.Instance.Player.itemData = null;
+                return;
+            }
+            // 이미 해당 아이템 최고 개수인 경우 아이템 버림
+            ThrowItem(data);
+            CharacterManager.Instance.Player.itemData = null;
+        }
+    
+        public void UpdateUI()
+        {
+            for(int i = 0; i < slots.Length; i++)
+            {
+                if (slots[i].item != null)
+                {
+                    slots[i].Set();
+                }
+                else
+                {
+                    slots[i].Clear();
+                }
+            }
+        }
+    
+        ItemSlot GetItemStack(ItemData data)
+        {
+            for(int i = 0; i < slots.Length; i++)
+            {
+                // 아이템 데이터와 슬롯의 아이템이 같고 슬롯 수량이 최대값보다 작으면
+                if (slots[i].item == data && slots[i].quantity < data.maxStackAmount)
+                {
+                    return slots[i];
+                }
+            }
+            return null;
+        }
+    
+        public void SelectItem(int index)
+        {
+            if (slots[index].item == null) return;
+    
+            selectedItem = slots[index];
+            selectedItemIndex = index;
+    
+            selectedItemName.text = selectedItem.item.displayName;
+            selectedItemDescription.text = selectedItem.item.description;
+            
+            // 스탯 문자열은 공백으로 초기화
+            selectedItemStatName.text = string.Empty;
+            selectedItemStatValue.text = string.Empty;
+    
+            // item이 consumable인 경우에 수치를 출력
+            for(int i = 0; i< selectedItem.item.consumables.Length; i++)
+            {
+                selectedItemStatName.text += selectedItem.item.consumables[i].type.ToString() + "\n";
+                selectedItemStatValue.text += selectedItem.item.consumables[i].value.ToString() + "\n";
+            }
+    
+            useButton.SetActive(selectedItem.item.type == ItemType.Consumable);
+            equipButton.SetActive(selectedItem.item.type == ItemType.Equipable && !slots[index].equipped);
+            unEquipButton.SetActive(selectedItem.item.type == ItemType.Equipable && slots[index].equipped);
+            dropButton.SetActive(true);
+        }
+    
+        // 버린 아이템 UI 정보 업데이트
+        void RemoveSelctedItem()
+        {
+            selectedItem.quantity--;
+    
+            if(selectedItem.quantity <= 0)
+            {
+                if (slots[selectedItemIndex].equipped)
+                {
+                    UnEquip(selectedItemIndex);
+                }
+    
+                selectedItem.item = null;
+                ClearSelectedItemWindow();
+            }
+            UpdateUI();
+        }
+    }
+    ```
+    </ul>
+  </div>
+</details>
